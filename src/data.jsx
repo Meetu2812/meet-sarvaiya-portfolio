@@ -15,14 +15,15 @@ function makeLabel(text, bg) {
 }
 const STEEL_WING = makeLabel('STEEL WING', '#2B49D4')
 
+/* yt = YouTube ID for the in-site theater player; entries without one open their link externally */
 export const SCREENS = [
-  { thumb: '/thumbs/documentary.jpg', title: 'Documentary Style', tag: 'Documentary', link: 'https://www.youtube.com/watch?v=E8oQgbBqdS4' },
-  { thumb: '/thumbs/ayush.jpg', title: 'Ayush More', tag: 'Gaming', link: 'https://www.youtube.com/watch?v=ENG8HICI3Co' },
-  { thumb: '/thumbs/agnit.jpg', title: 'Agnit Plays', tag: 'Gaming', link: 'https://www.youtube.com/watch?v=F5yZ0MtIulA' },
-  { thumb: '/thumbs/ravi.jpg', title: 'Ravi Plays', tag: 'Gaming', link: 'https://www.youtube.com/watch?v=sAfkdLDxWUI' },
-  { thumb: '/thumbs/bixuu.jpg', title: 'Bixuu', tag: 'Gaming', link: 'https://www.youtube.com/watch?v=Dsd6RbKVh7o' },
+  { thumb: '/thumbs/documentary.jpg', title: 'Documentary Style', tag: 'Documentary', yt: 'E8oQgbBqdS4', link: 'https://www.youtube.com/watch?v=E8oQgbBqdS4' },
+  { thumb: '/thumbs/ayush.jpg', title: 'Ayush More', tag: 'Gaming', yt: 'ENG8HICI3Co', link: 'https://www.youtube.com/watch?v=ENG8HICI3Co' },
+  { thumb: '/thumbs/agnit.jpg', title: 'Agnit Plays', tag: 'Gaming', yt: 'F5yZ0MtIulA', link: 'https://www.youtube.com/watch?v=F5yZ0MtIulA' },
+  { thumb: '/thumbs/ravi.jpg', title: 'Ravi Plays', tag: 'Gaming', yt: 'sAfkdLDxWUI', link: 'https://www.youtube.com/watch?v=sAfkdLDxWUI' },
+  { thumb: '/thumbs/bixuu.jpg', title: 'Bixuu', tag: 'Gaming', yt: 'Dsd6RbKVh7o', link: 'https://www.youtube.com/watch?v=Dsd6RbKVh7o' },
   { thumb: STEEL_WING, title: 'Steel Wing', tag: 'Gaming', link: 'https://drive.google.com/file/d/1cgE9iVwKC2ykgguoP3vaGJdwm-32gCcG/view' },
-  { thumb: '/thumbs/ayush2.jpg', title: 'Ayush More 2.0', tag: 'Horror', link: 'https://www.youtube.com/watch?v=i5laiQGK6ys' },
+  { thumb: '/thumbs/ayush2.jpg', title: 'Ayush More 2.0', tag: 'Horror', yt: 'i5laiQGK6ys', link: 'https://www.youtube.com/watch?v=i5laiQGK6ys' },
 ]
 
 export const SKILLS = [

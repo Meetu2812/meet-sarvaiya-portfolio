@@ -1,5 +1,6 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
+import { useProgress } from '@react-three/drei'
 import {
   motion, AnimatePresence, MotionConfig,
   useScroll, useSpring, useTransform, useMotionValueEvent,
@@ -54,6 +55,52 @@ function Intro() {
   )
 }
 
+/* ---------- theater mode — in-site cinematic player ---------- */
+function Theater({ screen, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [onClose])
+
+  return (
+    <motion.div className="theater" onClick={onClose}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}>
+      <div className="theater-head" onClick={(e) => e.stopPropagation()}>
+        <div>
+          <span className="mono theater-tag">{screen.tag}</span>
+          <h3 className="theater-title">{screen.title}</h3>
+        </div>
+        <button className="theater-close" onClick={onClose} aria-label="Close player">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+          Close
+        </button>
+      </div>
+      <motion.div className="theater-frame" onClick={(e) => e.stopPropagation()}
+        initial={{ clipPath: 'inset(46% 0% 46% 0%)', opacity: 0 }}
+        animate={{ clipPath: 'inset(0% 0% 0% 0%)', opacity: 1 }}
+        exit={{ clipPath: 'inset(46% 0% 46% 0%)', opacity: 0 }}
+        transition={{ duration: 0.55, ease: EASE }}>
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${screen.yt}?autoplay=1&rel=0`}
+          title={screen.title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
+      </motion.div>
+      <span className="theater-hint mono">ESC to close</span>
+    </motion.div>
+  )
+}
+
 function Portrait() {
   const [ok, setOk] = useState(true)
   return (
@@ -69,13 +116,21 @@ export default function App() {
   const [introDone, setIntroDone] = useState(false)
   const [focused, setFocused] = useState(0)
   const [inWork, setInWork] = useState(false)
+  const [watching, setWatching] = useState(null)
   const workRef = useRef(null)
   const outroRef = useRef(null)
 
+  /* hold the leader until the 3D set is loaded — min 2.5s, hard cap 7s */
+  const [minTimeUp, setMinTimeUp] = useState(false)
+  const { progress } = useProgress()
   useEffect(() => {
-    const t = setTimeout(() => setIntroDone(true), 2500)
-    return () => clearTimeout(t)
+    const min = setTimeout(() => setMinTimeUp(true), 2500)
+    const cap = setTimeout(() => setIntroDone(true), 7000)
+    return () => { clearTimeout(min); clearTimeout(cap) }
   }, [])
+  useEffect(() => {
+    if (minTimeUp && progress >= 100) setIntroDone(true)
+  }, [minTimeUp, progress])
 
   /* scroll progress: whole page (HUD), work corridor (dolly), outro (crane up) */
   const { scrollYProgress: page } = useScroll()
@@ -101,9 +156,17 @@ export default function App() {
     window.scrollTo({ top: el.offsetTop + (i / (N - 1)) * scrollable, behavior: 'smooth' })
   }, [])
 
+  /* watching a project: YouTube ones play in the theater, others open externally */
+  const onWatch = useCallback((i) => {
+    const s = SCREENS[i]
+    if (s.yt) setWatching(s)
+    else window.open(s.link, '_blank', 'noopener')
+  }, [])
+
   /* arrow keys step between screens */
   useEffect(() => {
     const onKey = (e) => {
+      if (watching) return
       if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
       const q = work.get()
       const dir = e.key === 'ArrowRight' ? 1 : -1
@@ -114,11 +177,15 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [work, jumpTo])
+  }, [work, jumpTo, watching])
 
   return (
     <MotionConfig reducedMotion="user">
       <AnimatePresence>{!introDone && <Intro key="intro" />}</AnimatePresence>
+
+      <AnimatePresence>
+        {watching && <Theater key="theater" screen={watching} onClose={() => setWatching(null)} />}
+      </AnimatePresence>
 
       {/* cinematic letterbox — widens while the reel plays */}
       <motion.div className="bar top" animate={{ height: inWork ? 54 : 22 }} transition={{ duration: 0.6, ease: EASE }} />
@@ -146,7 +213,7 @@ export default function App() {
         <Canvas camera={{ position: [0, 1.7, 6.8], fov: 42 }} dpr={[1, 1.75]}
           gl={{ antialias: true, powerPreference: 'high-performance' }}>
           <Suspense fallback={null}>
-            <Scene work={work} outro={outro} onJump={jumpTo} />
+            <Scene work={work} outro={outro} onJump={jumpTo} onWatch={onWatch} />
           </Suspense>
         </Canvas>
       </div>

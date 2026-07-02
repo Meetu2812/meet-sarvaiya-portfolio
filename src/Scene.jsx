@@ -38,7 +38,7 @@ function focusAt(k, out) {
   return out
 }
 
-function Screen({ data, index, work, onJump }) {
+function Screen({ data, index, work, onJump, onWatch }) {
   const group = useRef()
   const bezel = useRef()
   const play = useRef()
@@ -68,7 +68,7 @@ function Screen({ data, index, work, onJump }) {
       onClick={(e) => {
         e.stopPropagation()
         const k = work.get() * (N - 1)
-        if (Math.abs(k - index) < 0.5) window.open(data.link, '_blank', 'noopener')
+        if (Math.abs(k - index) < 0.5) onWatch(index)
         else onJump(index)
       }}
       onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer' }}
@@ -156,7 +156,7 @@ function FollowSpot({ work }) {
   )
 }
 
-export default function Scene({ work, outro, onJump }) {
+export default function Scene({ work, outro, onJump, onWatch }) {
   const lookTarget = useMemo(() => new THREE.Vector3(0, SCREEN_Y, -10), [])
   const tmp = useMemo(() => new THREE.Vector3(), [])
   const corridorFar = useMemo(() => new THREE.Vector3(0, SCREEN_Y - 0.2, -22), [])
@@ -168,17 +168,28 @@ export default function Scene({ work, outro, onJump }) {
     [],
   )
 
+  /* wider lens on portrait phones */
+  const { camera, size } = useThree()
+  useEffect(() => {
+    camera.fov = size.width / size.height < 0.8 ? 56 : 42
+    camera.updateProjectionMatrix()
+  }, [camera, size])
+
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime
     const q = work.get()
     const r = outro.get()
     const k = q * (N - 1)
 
+    /* portrait phones: pull the camera back so the focused screen fits the frame */
+    const aspect = state.size.width / state.size.height
+    const back = aspect < 0.8 ? 4.6 : aspect < 1.1 ? 1.6 : 0
+
     /* camera: dolly along the corridor, then crane up + retreat for the outro,
        staying on the front side of the screens so the set stays visible */
     const cx = (state.pointer.x * 0.45 + Math.sin(t * 0.22) * 0.16) * drift * (1 - r)
     const cy = 1.7 + r * 5.2
-    const cz = 6.8 - k * SPACING + r * 16
+    const cz = 6.8 + back - k * SPACING + r * 16
 
     state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, cx, 4, delta)
     state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, cy, 4, delta)
@@ -208,7 +219,7 @@ export default function Scene({ work, outro, onJump }) {
       <pointLight ref={keyB} intensity={22} distance={26} color="#5b8cff" />
 
       {SCREENS.map((s, i) => (
-        <Screen key={i} data={s} index={i} work={work} onJump={onJump} />
+        <Screen key={i} data={s} index={i} work={work} onJump={onJump} onWatch={onWatch} />
       ))}
 
       <FollowSpot work={work} />
